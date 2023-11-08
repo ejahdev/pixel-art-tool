@@ -89,38 +89,53 @@ function createCanvas(width, height) {
     }
   }
   
-// Function to create palette colors
-function createPalette(colors) {
-  palette.innerHTML = "";
-
-  colors.forEach((color) => {
-    const colorDiv = document.createElement("div");
-    colorDiv.style.backgroundColor = color;
-    colorDiv.addEventListener("click", () => {
-      currentColor = color;
-      brushIndicator.style.backgroundColor = color;
-      updateBrushIndicatorText(color); // Call the function to update the text
+  function createPalette(colors) {
+    palette.innerHTML = "";
+  
+    colors.forEach((color) => {
+      const colorDiv = document.createElement("div");
+      if (typeof color === "object") {
+        colorDiv.style.backgroundColor = color.value; // Use color.value for RGB value
+        colorDiv.addEventListener("click", () => {
+          currentColor = color.value; // Use color.value for RGB value
+          brushIndicator.style.backgroundColor = currentColor;
+          updateBrushIndicatorText(color.value); // Call the function to update the text
+        });
+      } else {
+        // Handle non-object colors (e.g., "Erase")
+        colorDiv.style.backgroundColor = color;
+        colorDiv.addEventListener("click", () => {
+          currentColor = color;
+          brushIndicator.style.backgroundColor = color;
+          updateBrushIndicatorText(color); // Call the function to update the text
+        });
+      }
+      palette.appendChild(colorDiv);
     });
-    palette.appendChild(colorDiv);
-  });
 
-    // Add the "Erase" button to the palette
-    const eraseDiv = document.createElement("div");
-    eraseDiv.textContent = "Erase";
-    eraseDiv.addEventListener("click", () => {
-    currentColor = "transparent";
-    brushIndicator.style.backgroundColor = "transparent";
-    updateBrushIndicatorText("Transparent");
-    });
+// Add the "Erase" button to the palette
+const eraseDiv = document.createElement("div");
+eraseDiv.textContent = "";
+eraseDiv.addEventListener("click", () => {
+  currentColor = "transparent";
+  brushIndicator.style.backgroundColor = "transparent";
+  updateBrushIndicatorText("Transparent");
+});
 
-    // Center the text within the "Erase" button
-    eraseDiv.style.display = "flex";
-    eraseDiv.style.alignItems = "center";
-    eraseDiv.style.justifyContent = "center";
+// Apply CSS styles to make the eraser button round
+eraseDiv.style.display = "flex";
+eraseDiv.style.alignItems = "center";
+eraseDiv.style.justifyContent = "center";
+eraseDiv.style.width = "20px"; // Set the width to create a round button
+eraseDiv.style.height = "20px"; // Set the height to create a round button
+eraseDiv.style.borderRadius = "50%"; // Make the button round
+eraseDiv.style.backgroundColor = "transparent"; // Background color
+eraseDiv.style.border = "2px solid black";
 
-    palette.appendChild(eraseDiv);
 
-}
+palette.appendChild(eraseDiv);
+
+  }
 
 
 function clearCanvas() {
@@ -134,10 +149,14 @@ function clearCanvas() {
 }
 
 
-// Function to update the brush indicator text
 function updateBrushIndicatorText(color) {
-  brushIndicator.textContent = "" + color;
+  if (typeof color === "string") {
+    brushIndicator.textContent = color;
+  } else if (typeof color === "object" && color.name) {
+    brushIndicator.textContent = color.name;
+  }
 }
+
 
 // Add a click event listener to the "Clear" button
 clearButton.addEventListener("click", () => {
@@ -205,7 +224,13 @@ createPalette([
   "purple", "brown", "gray", "aquamarine", "aqua", "cornflowerblue",
   "chartreuse", "yellowgreen", "darkolivegreen", "darkmagenta", "hotpink",
   "gold", "indigo", "dodgerblue", "deepskyblue", "dimgrey", "salmon", "coral",
-  "limegreen", "navy", "mediumpurple", "maroon", "mistyrose",
+  "limegreen", "navy", "mediumpurple", "maroon", "mistyrose", {name: "Red1", value: "rgb(244, 36, 15)"},
+  {name: "Red2", value: "rgb(244, 75, 5)"}, {name: "Orange1", value: "rgb(241, 143, 3)"},
+  {name: "Orange2", value: "rgb(239, 174, 0)"}, {name: "Yellow1", value: "rgb(244, 243, 41)"},
+  {name: "Green1", value: "rgb(198, 221, 36)"}, {name: "Green2", value: "rgb(99, 167, 46)"},
+  {name: "Blue1", value: "rgb(2, 136, 195)"}, {name: "Blue2", value: "rgb(4, 66, 245)"},
+  {name: "Purple1", value: "rgb(59, 0, 154)"}, {name: "Purple2", value: "rgb(129, 0, 166)"},
+  {name: "Maroon1", value: "rgb(165, 23, 71)"},
 ]);
 
 // Initialize brush color indicator
