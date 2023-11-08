@@ -1,0 +1,107 @@
+body {
+    background-color: #333;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+h1 {
+    font-size: 48px;
+    font-family: "Agbalumo", sans-serif;
+    font-weight: 900;
+    color: yellowgreen;
+    text-align: center;
+}
+
+#canvas {
+    display: grid;
+    grid-template-columns: repeat(20, 1fr);
+    grid-template-rows: repeat(20, 1fr);
+    gap: 2px;
+    border: 6px solid #000000;
+    padding: 10px;
+    background-color: darkslategrey !important;
+    margin-bottom: 25px;
+}
+
+#palette {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+}
+
+#palette div {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    border: 1px solid black;
+}
+
+#controls-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+}
+
+#brush-indicator {
+    display: flex;
+    align-items: center;
+}
+
+#color-label {
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+button {
+    display: inline-block;
+    background-color: green;
+    color: #ffffff;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+#erase-button {
+    text-align: center;
+    /* Your other styles here */
+}
+
+#palette div.erase-div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  
+  /* Style the size buttons */
+#size-buttons {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
+  
+  #size-buttons button {
+    background-color: #0074d9; /* Change this to the desired background color */
+    color: #ffffff;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    margin: 0 10px; /* Adjust the margin to separate the buttons */
+    font-weight: bold;
+    font-size: 16px;
+  }
+  
+  /* Hover effect for buttons */
+  #size-buttons button:hover {
+    background-color: #0056b3; /* Change this to the desired hover color */
+  }
+  
