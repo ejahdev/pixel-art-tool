@@ -12,7 +12,6 @@ let isDrawing = false; // Flag to track drawing state
 let isMouseOverCanvas = false;
 const pixelColors = {}; // Store colors for each pixel
 
-
 // Function to create canvas grid
 function createCanvas(width, height) {
   canvas.innerHTML = "";
@@ -29,118 +28,71 @@ function createCanvas(width, height) {
     pixel.id = `pixel-${i}`; // Assign a unique ID to each pixel
     pixel.classList.add("pixel"); // Add a class for pixels
     canvas.appendChild(pixel);
-    
+
     // Attach mousedown event listener to each pixel
-    pixel.addEventListener("mousedown", (event) => {
-      if (event.button === 0) {
+    const pixels = document.querySelectorAll(".pixel");
+    pixels.forEach((pixel) => {
+      pixel.addEventListener("mousedown", (event) => {
         isDrawing = true;
-        togglePixelColor(event.target);
-      }
+        paintPixel(event.target);
+      });
     });
   }
-}
 
-
-  function floodFill(pixel, newColor, targetColor) {
-    const pixelId = pixel.id;
-  
-    if (pixelColors[pixelId] !== targetColor) {
-      return;
-    }
-  
-    pixelColors[pixelId] = newColor;
-    pixel.style.backgroundColor = newColor;
-  
-    const x = parseInt(pixelId.split("-")[1]) % currentGridSize;
-    const y = Math.floor(parseInt(pixelId.split("-")[1]) / currentGridSize);
-  
-    const neighbors = [
-      [x + 1, y],
-      [x - 1, y],
-      [x, y + 1],
-      [x, y - 1]
-    ];
-  
-    for (const [nx, ny] of neighbors) {
-      if (nx >= 0 && nx < currentGridSize && ny >= 0 && ny < currentGridSize) {
-        floodFill(
-          document.getElementById(`pixel-${ny * currentGridSize + nx}`),
-          newColor,
-          targetColor
-        );
+  // Function to handle drawing when the mouse is moved
+  function handleMouseMove(event) {
+    if (isDrawing && isMouseOverCanvas) {
+      const pixel = event.target;
+      if (pixel.classList.contains("pixel") && !pixel.getAttribute("data-painted")) {
+        paintPixel(pixel);
       }
     }
   }
-  
-// Function to handle drawing when the mouse is moved
-function handleMouseMove(event) {
-  if (isDrawing && isMouseOverCanvas) {
-    const pixel = event.target;
-    if (pixel.classList.contains("pixel")) { // Change "square" to "pixel" if that's the class name of your squares
-      togglePixelColor(pixel);
-    }
-  }
-}
-
-// Event listener to track mouseover state
-canvas.addEventListener("mouseenter", () => {
-  isMouseOverCanvas = true;
-});
-
-canvas.addEventListener("mouseleave", () => {
-  isMouseOverCanvas = false;
-});
-
-// Event listener for mousedown on the canvas to start drawing
-canvas.addEventListener("mousedown", (event) => {
-  if (event.button === 0) {
+    
+  canvas.addEventListener("mousedown", () => {
     isDrawing = true;
-  }
-});
-
-// Event listener for mousemove on the entire document to draw while moving the mouse
-document.addEventListener("mousemove", handleMouseMove);
-
-// Event listener for mouseup on the entire document to stop drawing
-document.addEventListener("mouseup", () => {
-  isDrawing = false;
-});
+  });
   
-  // Function to toggle a pixel's color between currentColor and transparent
-  function togglePixelColor(pixel) {
+  canvas.addEventListener("mouseup", () => {
+    isDrawing = false;
+  });
+  
+  canvas.addEventListener("mouseleave", () => {
+    isDrawing = false;
+  });
+  
+  canvas.addEventListener("mouseover", (event) => {
+    if (isDrawing) {
+      if (event.target.classList.contains("pixel")) {
+        paintPixel(event.target);
+      }
+    }
+  });
+    
+  function paintPixel(pixel) {
     const pixelId = pixel.id;
     if (pixelColors[pixelId] === currentColor) {
+      // If the pixel already has the current color, undo the paint
       pixel.style.backgroundColor = "transparent";
       pixelColors[pixelId] = "transparent";
+      pixel.removeAttribute("data-painted");
     } else {
       pixel.style.backgroundColor = currentColor;
       pixelColors[pixelId] = currentColor;
+      pixel.setAttribute("data-painted", "true");
     }
   }
-  
-  function createPalette(colors) {
-    palette.innerHTML = "";
-  
-    colors.forEach((color) => {
-      const colorDiv = document.createElement("div");
-      if (typeof color === "object") {
-        colorDiv.style.backgroundColor = color.value; // Use color.value for RGB value
-        colorDiv.addEventListener("click", () => {
-          currentColor = color.value; // Use color.value for RGB value
-          brushIndicator.style.backgroundColor = currentColor;
-          updateBrushIndicatorText(color.value); // Call the function to update the text
-        });
-      } else {
-        // Handle non-object colors (e.g., "Erase")
-        colorDiv.style.backgroundColor = color;
-        colorDiv.addEventListener("click", () => {
-          currentColor = color;
-          brushIndicator.style.backgroundColor = color;
-          updateBrushIndicatorText(color); // Call the function to update the text
-        });
-      }
-      palette.appendChild(colorDiv);
-    });
+}
+    
+
+
+// Function to undo painting by making a pixel transparent
+function undoPaint(pixel) {
+  const pixelId = pixel.id;
+  pixel.style.backgroundColor = "transparent";
+  pixelColors[pixelId] = "transparent";
+  pixel.removeAttribute("data-painted");
+}
 
 // Add the "Erase" button to the palette
 const eraseDiv = document.createElement("div");
@@ -164,8 +116,53 @@ eraseDiv.style.border = "2px solid black";
 
 palette.appendChild(eraseDiv);
 
-  }
 
+  function createPalette(colors) {
+    palette.innerHTML = "";
+  
+    colors.forEach((color) => {
+      const colorDiv = document.createElement("div");
+      if (typeof color === "object") {
+        colorDiv.style.backgroundColor = color.value; // Use color.value for RGB value
+        colorDiv.addEventListener("click", () => {
+          currentColor = color.value; // Use color.value for RGB value
+          brushIndicator.style.backgroundColor = currentColor;
+          updateBrushIndicatorText(color.value); // Call the function to update the text
+        });
+      } else {
+        // Handle non-object colors (e.g., "Erase")
+        colorDiv.style.backgroundColor = color;
+        colorDiv.addEventListener("click", () => {
+          currentColor = color;
+          brushIndicator.style.backgroundColor = color;
+          updateBrushIndicatorText(color); // Call the function to update the text
+        });
+      }
+      palette.appendChild(colorDiv);
+    });
+  
+    // Add the "Erase" button to the palette
+    const eraseDiv = document.createElement("div");
+    eraseDiv.textContent = "";
+    eraseDiv.addEventListener("click", () => {
+      currentColor = "transparent";
+      brushIndicator.style.backgroundColor = "transparent";
+      updateBrushIndicatorText("Transparent");
+    });
+  
+    // Apply CSS styles to make the eraser button round
+    eraseDiv.style.display = "flex";
+    eraseDiv.style.alignItems = "center";
+    eraseDiv.style.justifyContent = "center";
+    eraseDiv.style.width = "20px"; // Set the width to create a round button
+    eraseDiv.style.height = "20px"; // Set the height to create a round button
+    eraseDiv.style.borderRadius = "50%"; // Make the button round
+    eraseDiv.style.backgroundColor = "transparent"; // Background color
+    eraseDiv.style.border = "2px solid black";
+  
+    palette.appendChild(eraseDiv);
+  }
+  
 
 function clearCanvas() {
   for (const pixelId in pixelColors) {
@@ -213,6 +210,8 @@ saveButton.addEventListener("click", () => {
         }
       }
     }
+
+    
   
     // Create a data URL from the image canvas
     const canvasDataUrl = imageCanvas.toDataURL("image/png");
@@ -248,6 +247,7 @@ size16Button.addEventListener("click", () => {
   
 // Initialize canvas and palette
 createCanvas(16, 16);
+// Initialize palette
 createPalette([
   "black", "white", "red", "blue", "green", "yellow",
   "purple", "brown", "gray", "aquamarine", "aqua", "cornflowerblue",
@@ -261,6 +261,7 @@ createPalette([
   {name: "Purple1", value: "rgb(59, 0, 154)"}, {name: "Purple2", value: "rgb(129, 0, 166)"},
   {name: "Maroon1", value: "rgb(165, 23, 71)"},
 ]);
+
 
 // Initialize brush color indicator
 brushIndicator.style.backgroundColor = currentColor;
