@@ -9,30 +9,36 @@ const palette = document.getElementById("palette");
 const brushIndicator = document.getElementById("brush-indicator");
 let currentColor = "red"; // Default brush color
 let isDrawing = false; // Flag to track drawing state
+let isMouseOverCanvas = false;
 const pixelColors = {}; // Store colors for each pixel
 
 
 // Function to create canvas grid
 function createCanvas(width, height) {
-    canvas.innerHTML = "";
-    canvas.style.gridTemplateColumns = `repeat(${width}, 20px)`;
-    canvas.style.gridTemplateRows = `repeat(${height}, 20px)`;
-    canvas.style.backgroundColor = "lightgray"; // Set the background color to gray
-  
-    for (let i = 0; i < width * height; i++) {
-      const pixel = document.createElement("div");
-      pixel.style.width = "20px";
-      pixel.style.height = "20px";
-      pixel.style.backgroundColor = "transparent"; // Set uncolored pixels as transparent
-      pixel.style.border = "1px solid #ccc";
-      pixel.addEventListener("click", () => {
-        togglePixelColor(pixel); // Toggle the pixel's color when clicked
-      });
-      pixel.id = `pixel-${i}`; // Assign a unique ID to each pixel
-      canvas.appendChild(pixel);
-    }
-  }  
+  canvas.innerHTML = "";
+  canvas.style.gridTemplateColumns = `repeat(${width}, 20px)`;
+  canvas.style.gridTemplateRows = `repeat(${height}, 20px)`;
+  canvas.style.backgroundColor = "lightgray"; // Set the background color to gray
 
+  for (let i = 0; i < width * height; i++) {
+    const pixel = document.createElement("div");
+    pixel.style.width = "20px";
+    pixel.style.height = "20px";
+    pixel.style.backgroundColor = "transparent"; // Set uncolored pixels as transparent
+    pixel.style.border = "1px solid #ccc";
+    pixel.id = `pixel-${i}`; // Assign a unique ID to each pixel
+    pixel.classList.add("pixel"); // Add a class for pixels
+    canvas.appendChild(pixel);
+    
+    // Attach mousedown event listener to each pixel
+    pixel.addEventListener("mousedown", (event) => {
+      if (event.button === 0) {
+        isDrawing = true;
+        togglePixelColor(event.target);
+      }
+    });
+  }
+}
 
 
   function floodFill(pixel, newColor, targetColor) {
@@ -66,16 +72,39 @@ function createCanvas(width, height) {
     }
   }
   
-  canvas.addEventListener("mousedown", (event) => {
-    if (event.button === 1) { // Middle mouse button (button code 1)
-      const pixelId = event.target.id;
-      const pixelColor = pixelColors[pixelId];
-      
-      if (pixelColor === "transparent") {
-        floodFill(event.target, currentColor, "transparent");
-      }
+// Function to handle drawing when the mouse is moved
+function handleMouseMove(event) {
+  if (isDrawing && isMouseOverCanvas) {
+    const pixel = event.target;
+    if (pixel.classList.contains("pixel")) { // Change "square" to "pixel" if that's the class name of your squares
+      togglePixelColor(pixel);
     }
-  });
+  }
+}
+
+// Event listener to track mouseover state
+canvas.addEventListener("mouseenter", () => {
+  isMouseOverCanvas = true;
+});
+
+canvas.addEventListener("mouseleave", () => {
+  isMouseOverCanvas = false;
+});
+
+// Event listener for mousedown on the canvas to start drawing
+canvas.addEventListener("mousedown", (event) => {
+  if (event.button === 0) {
+    isDrawing = true;
+  }
+});
+
+// Event listener for mousemove on the entire document to draw while moving the mouse
+document.addEventListener("mousemove", handleMouseMove);
+
+// Event listener for mouseup on the entire document to stop drawing
+document.addEventListener("mouseup", () => {
+  isDrawing = false;
+});
   
   // Function to toggle a pixel's color between currentColor and transparent
   function togglePixelColor(pixel) {
