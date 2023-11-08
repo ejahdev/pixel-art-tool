@@ -9,119 +9,152 @@ const palette = document.getElementById("palette");
 const brushIndicator = document.getElementById("brush-indicator");
 let currentColor = "red"; // Default brush color
 let isDrawing = false; // Flag to track drawing state
+let isMouseOverCanvas = false;
 const pixelColors = {}; // Store colors for each pixel
-
 
 // Function to create canvas grid
 function createCanvas(width, height) {
-    canvas.innerHTML = "";
-    canvas.style.gridTemplateColumns = `repeat(${width}, 20px)`;
-    canvas.style.gridTemplateRows = `repeat(${height}, 20px)`;
-    canvas.style.backgroundColor = "lightgray"; // Set the background color to gray
+  canvas.innerHTML = "";
+  canvas.style.gridTemplateColumns = `repeat(${width}, 20px)`;
+  canvas.style.gridTemplateRows = `repeat(${height}, 20px)`;
+  canvas.style.backgroundColor = "lightgray"; // Set the background color to gray
 
-    for (let i = 0; i < width * height; i++) {
-      const pixel = document.createElement("div");
-      pixel.style.width = "20px";
-      pixel.style.height = "20px";
-      pixel.style.backgroundColor = "transparent"; // Set uncolored pixels as transparent
-      pixel.style.border = "1px solid #ccc";
-      pixel.addEventListener("click", () => {
-        togglePixelColor(pixel); // Toggle the pixel's color when clicked
-      });
-      pixel.id = `pixel-${i}`; // Assign a unique ID to each pixel
-      canvas.appendChild(pixel);
-    }
-  }  
-
-
-
-  function floodFill(pixel, newColor, targetColor) {
-    const pixelId = pixel.id;
-
-    if (pixelColors[pixelId] !== targetColor) {
-      return;
-    }
-
-    pixelColors[pixelId] = newColor;
-    pixel.style.backgroundColor = newColor;
-
-    const x = parseInt(pixelId.split("-")[1]) % currentGridSize;
-    const y = Math.floor(parseInt(pixelId.split("-")[1]) / currentGridSize);
-
-    const neighbors = [
-      [x + 1, y],
-      [x - 1, y],
-      [x, y + 1],
-      [x, y - 1]
-    ];
-
-    for (const [nx, ny] of neighbors) {
-      if (nx >= 0 && nx < currentGridSize && ny >= 0 && ny < currentGridSize) {
-        floodFill(
-          document.getElementById(`pixel-${ny * currentGridSize + nx}`),
-          newColor,
-          targetColor
-        );
-      }
-    }
+  for (let i = 0; i < width * height; i++) {
+    const pixel = document.createElement("div");
+    pixel.style.width = "20px";
+    pixel.style.height = "20px";
+    pixel.style.backgroundColor = "transparent"; // Set uncolored pixels as transparent
+    pixel.style.border = "1px solid #ccc";
+    pixel.id = `pixel-${i}`; // Assign a unique ID to each pixel
+    pixel.classList.add("pixel"); // Add a class for pixels
+    canvas.appendChild(pixel);
   }
 
-  canvas.addEventListener("mousedown", (event) => {
-    if (event.button === 1) { // Middle mouse button (button code 1)
-      const pixelId = event.target.id;
-      const pixelColor = pixelColors[pixelId];
+  // Attach mousedown event listener to each pixel
+  const pixels = document.querySelectorAll(".pixel");
+  pixels.forEach((pixel) => {
+    pixel.addEventListener("mousedown", (event) => {
+      isDrawing = true;
+      paintPixel(event.target);
+    });
+  }); // Missing closing parenthesis
 
-      if (pixelColor === "transparent") {
-        floodFill(event.target, currentColor, "transparent");
-      }
-    }
+
+  // Add event listeners for drawing and tracking mouse position
+  canvas.addEventListener("mousedown", () => {
+    isDrawing = true;
   });
 
-  // Function to toggle a pixel's color between currentColor and transparent
-  function togglePixelColor(pixel) {
+  canvas.addEventListener("mouseup", () => {
+    isDrawing = false;
+  });
+
+  canvas.addEventListener("mouseleave", () => {
+    isDrawing = false;
+  });
+
+  canvas.addEventListener("mouseover", () => {
+    isMouseOverCanvas = true;
+  });
+
+  canvas.addEventListener("mouseleave", () => {
+    isMouseOverCanvas = false;
+  });
+}
+
+  function paintPixel(pixel) {
     const pixelId = pixel.id;
     if (pixelColors[pixelId] === currentColor) {
+      // If the pixel already has the current color, undo the paint
       pixel.style.backgroundColor = "transparent";
       pixelColors[pixelId] = "transparent";
+      pixel.removeAttribute("data-painted");
     } else {
       pixel.style.backgroundColor = currentColor;
       pixelColors[pixelId] = currentColor;
+      pixel.setAttribute("data-painted", "true");
     }
   }
+    
 
-// Function to create palette colors
-function createPalette(colors) {
-  palette.innerHTML = "";
 
-  colors.forEach((color) => {
-    const colorDiv = document.createElement("div");
-    colorDiv.style.backgroundColor = color;
-    colorDiv.addEventListener("click", () => {
-      currentColor = color;
-      brushIndicator.style.backgroundColor = color;
-      updateBrushIndicatorText(color); // Call the function to update the text
+// Function to undo painting by making a pixel transparent
+function undoPaint(pixel) {
+  const pixelId = pixel.id;
+  pixel.style.backgroundColor = "transparent";
+  pixelColors[pixelId] = "transparent";
+  pixel.removeAttribute("data-painted");
+}
+
+// Add the "Erase" button to the palette
+const eraseDiv = document.createElement("div");
+eraseDiv.textContent = "";
+eraseDiv.addEventListener("click", () => {
+  currentColor = "transparent";
+  brushIndicator.style.backgroundColor = "transparent";
+  updateBrushIndicatorText("Transparent");
+});
+
+// Apply CSS styles to make the eraser button round
+eraseDiv.style.display = "flex";
+eraseDiv.style.alignItems = "center";
+eraseDiv.style.justifyContent = "center";
+eraseDiv.style.width = "20px"; // Set the width to create a round button
+eraseDiv.style.height = "20px"; // Set the height to create a round button
+eraseDiv.style.borderRadius = "50%"; // Make the button round
+eraseDiv.style.backgroundColor = "transparent"; // Background color
+eraseDiv.style.border = "2px solid black";
+
+
+palette.appendChild(eraseDiv);
+
+
+  function createPalette(colors) {
+    palette.innerHTML = "";
+  
+    colors.forEach((color) => {
+      const colorDiv = document.createElement("div");
+      if (typeof color === "object") {
+        colorDiv.style.backgroundColor = color.value; // Use color.value for RGB value
+        colorDiv.addEventListener("click", () => {
+          currentColor = color.value; // Use color.value for RGB value
+          brushIndicator.style.backgroundColor = currentColor;
+          updateBrushIndicatorText(color.value); // Call the function to update the text
+        });
+      } else {
+        // Handle non-object colors (e.g., "Erase")
+        colorDiv.style.backgroundColor = color;
+        colorDiv.addEventListener("click", () => {
+          currentColor = color;
+          brushIndicator.style.backgroundColor = color;
+          updateBrushIndicatorText(color); // Call the function to update the text
+        });
+      }
+      palette.appendChild(colorDiv);
     });
-    palette.appendChild(colorDiv);
-  });
-
+  
     // Add the "Erase" button to the palette
     const eraseDiv = document.createElement("div");
-    eraseDiv.textContent = "Erase";
+    eraseDiv.textContent = "";
     eraseDiv.addEventListener("click", () => {
-    currentColor = "transparent";
-    brushIndicator.style.backgroundColor = "transparent";
-    updateBrushIndicatorText("Transparent");
+      currentColor = "transparent";
+      brushIndicator.style.backgroundColor = "transparent";
+      updateBrushIndicatorText("Transparent");
     });
-
-    // Center the text within the "Erase" button
+  
+    // Apply CSS styles to make the eraser button round
     eraseDiv.style.display = "flex";
     eraseDiv.style.alignItems = "center";
     eraseDiv.style.justifyContent = "center";
-
+    eraseDiv.style.width = "20px"; // Set the width to create a round button
+    eraseDiv.style.height = "20px"; // Set the height to create a round button
+    eraseDiv.style.borderRadius = "50%"; // Make the button round
+    eraseDiv.style.backgroundColor = "transparent"; // Background color
+    eraseDiv.style.border = "2px solid black";
+  
     palette.appendChild(eraseDiv);
-
-}
-
+  }
+  
 
 function clearCanvas() {
   for (const pixelId in pixelColors) {
@@ -134,10 +167,14 @@ function clearCanvas() {
 }
 
 
-// Function to update the brush indicator text
 function updateBrushIndicatorText(color) {
-  brushIndicator.textContent = "" + color;
+  if (typeof color === "string") {
+    brushIndicator.textContent = color;
+  } else if (typeof color === "object" && color.name) {
+    brushIndicator.textContent = color.name;
+  }
 }
+
 
 // Add a click event listener to the "Clear" button
 clearButton.addEventListener("click", () => {
@@ -147,14 +184,14 @@ clearButton.addEventListener("click", () => {
 // Add a click event listener to the "Save" button
 saveButton.addEventListener("click", () => {
     // Get the current grid size
-
+  
     const imageCanvas = document.createElement("canvas");
     const canvasWidth = currentGridSize * 20; // Set the canvas width based on grid size
     const canvasHeight = currentGridSize * 20; // Set the canvas height based on grid size
     imageCanvas.width = canvasWidth;
     imageCanvas.height = canvasHeight;
     const ctx = imageCanvas.getContext("2d");
-
+  
     // Redraw your grid onto the image canvas
     for (let x = 0; x < currentGridSize; x++) {
       for (let y = 0; y < currentGridSize; y++) {
@@ -166,18 +203,20 @@ saveButton.addEventListener("click", () => {
       }
     }
 
+    
+  
     // Create a data URL from the image canvas
     const canvasDataUrl = imageCanvas.toDataURL("image/png");
-
+  
     // Create an anchor element to trigger the download
     const downloadLink = document.createElement("a");
     downloadLink.href = canvasDataUrl;
     downloadLink.download = "pixel-art.png"; // Set the desired file name
-
+  
     // Simulate a click on the download link to trigger the download
     downloadLink.click();
   });
-
+  
 let currentGridSize = 16;
 
 size16Button.addEventListener("click", () => {
@@ -185,28 +224,36 @@ size16Button.addEventListener("click", () => {
     createCanvas(16, 16);
     currentGridSize = 16;
   });
-
+  
   size32Button.addEventListener("click", () => {
     clearCanvas();
     createCanvas(32, 32);
     currentGridSize = 32;
   });
-
+  
   size48Button.addEventListener("click", () => {
     clearCanvas();
     createCanvas(48, 48);
     currentGridSize = 48;
   }); 
-
+  
 // Initialize canvas and palette
 createCanvas(16, 16);
+// Initialize palette
 createPalette([
   "black", "white", "red", "blue", "green", "yellow",
   "purple", "brown", "gray", "aquamarine", "aqua", "cornflowerblue",
   "chartreuse", "yellowgreen", "darkolivegreen", "darkmagenta", "hotpink",
   "gold", "indigo", "dodgerblue", "deepskyblue", "dimgrey", "salmon", "coral",
-  "limegreen", "navy", "mediumpurple", "maroon", "mistyrose",
+  "limegreen", "navy", "mediumpurple", "maroon", "mistyrose", {name: "Red1", value: "rgb(244, 36, 15)"},
+  {name: "Red2", value: "rgb(244, 75, 5)"}, {name: "Orange1", value: "rgb(241, 143, 3)"},
+  {name: "Orange2", value: "rgb(239, 174, 0)"}, {name: "Yellow1", value: "rgb(244, 243, 41)"},
+  {name: "Green1", value: "rgb(198, 221, 36)"}, {name: "Green2", value: "rgb(99, 167, 46)"},
+  {name: "Blue1", value: "rgb(2, 136, 195)"}, {name: "Blue2", value: "rgb(4, 66, 245)"},
+  {name: "Purple1", value: "rgb(59, 0, 154)"}, {name: "Purple2", value: "rgb(129, 0, 166)"},
+  {name: "Maroon1", value: "rgb(165, 23, 71)"},
 ]);
+
 
 // Initialize brush color indicator
 brushIndicator.style.backgroundColor = currentColor;
